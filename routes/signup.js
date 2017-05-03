@@ -5,6 +5,11 @@ const UserModel = require('../models/users');
 const fs = require('fs')
 const sha1 = require('sha1')
 const path = require('path')
+const qiniu = require('qiniu')
+
+qiniu.conf.ACCESS_KEY = 'tCuOwXsnbu2Hy9evImpm1rzIp8_Qnq9GRykjD7F1';
+qiniu.conf.SECRET_KEY = 'zJOOn6eaoj7dFEQlEBDgdp0FmWCtznRUH1j9a4Kx';
+const bucket = 'zzzzzga';
 
 // GET /signup 注册页
 router.get('/', checkNotLogin, function(req, res, next) {
@@ -46,6 +51,18 @@ router.post('/', checkNotLogin, function(req, res, next) {
         req.flash('error', e.message);
         return res.redirect('/signup');
     }
+
+    var key = avatar
+    var extra = new qiniu.io.PutExtra()
+    qiniu.io.putFile(new qiniu.rs.PutPolicy(bucket+':'+key).token(), key, 'public/img/' + key, extra, (err, ret) => {
+        if (!err) {
+            // console.log(ret.hash, ret.key, ret.persistentId)
+            // 删除上传的头像
+            fs.unlink(req.files.avatar.path);
+        } else {
+            console.log(err)
+        }
+    })
 
     // 明文密码加密
     password = sha1(password);
